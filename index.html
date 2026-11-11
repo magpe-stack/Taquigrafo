@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Taquígrafo</title>
+  <meta name="description" content="Taquígrafo: micro-notas de até 50 caracteres com carimbo de hora, 100% offline.">
+  <meta name="theme-color" content="#001F8F">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <script>
+    /* Aplica o tema salvo antes da pintura para evitar flash */
+    try {
+      var t = localStorage.getItem('taq-theme');
+      if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Sprite do logotipo (ícone puro, sem texto) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="logo" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="112" fill="#001F8F"/>
+      <circle cx="256" cy="268" r="150" fill="none" stroke="#FFFFFF" stroke-width="36"/>
+      <path d="M256 268V172M256 268l74 34" fill="none" stroke="#FFFFFF" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="402" cy="114" r="30" fill="#63CD1E"/>
+    </symbol>
+  </svg>
+
+  <!-- Splash cinematográfica (3 s) -->
+  <div id="splash" role="status" aria-live="polite">
+    <div class="splash-inner">
+      <svg class="splash-logo" aria-hidden="true"><use href="#logo"/></svg>
+      <h1 class="splash-title">Taquígrafo</h1>
+      <p class="splash-tag">Taquigrafia temporal urbana</p>
+    </div>
+  </div>
+
+  <a class="skip-link" href="#main">Ir para o conteúdo</a>
+
+  <!-- Header -->
+  <header class="app-header">
+    <button id="btn-home" class="brand" type="button" aria-label="Taquígrafo — voltar para a página inicial">
+      <svg class="logo" aria-hidden="true"><use href="#logo"/></svg>
+      <span class="brand-name">Taquígrafo</span>
+    </button>
+    <button id="btn-menu" class="icon-btn" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="drawer">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+    </button>
+  </header>
+
+  <!-- Drawer -->
+  <div id="overlay" class="overlay" hidden></div>
+  <aside id="drawer" class="drawer" aria-label="Menu principal" inert>
+    <div class="drawer-head">
+      <span class="drawer-title">Menu</span>
+      <button id="btn-menu-close" class="icon-btn" type="button" aria-label="Fechar menu">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <nav>
+      <ul class="drawer-list">
+        <li><button type="button" data-action="home">Meus Cadernos</button></li>
+        <li><button type="button" data-action="new">Novo Caderno</button></li>
+        <li><button type="button" data-action="backup">Backup Geral (JSON)</button></li>
+        <li><button type="button" data-action="restore">Restaurar Backup</button></li>
+        <li><button type="button" data-action="theme" id="btn-theme">Alternar Tema Claro/Escuro</button></li>
+        <li><button type="button" data-action="fullscreen" id="btn-fullscreen">Tela Cheia</button></li>
+        <li><button type="button" data-action="about">Sobre o App</button></li>
+        <li id="install-item" hidden><button type="button" data-action="install">Instalar o Taquígrafo</button></li>
+      </ul>
+    </nav>
+    <input id="file-restore" type="file" accept="application/json,.json" hidden>
+  </aside>
+
+  <main id="main" tabindex="-1">
+
+    <!-- Dashboard -->
+    <section id="view-home" aria-labelledby="home-title">
+      <div class="section-head">
+        <h2 id="home-title">Meus Cadernos</h2>
+        <button class="btn btn-primary" type="button" data-action="new">+ Novo Caderno</button>
+      </div>
+      <div id="notebook-list" class="card-grid"></div>
+      <p id="empty-state" class="empty" hidden>
+        Nenhum caderno ainda. Crie o primeiro com <strong>Novo Caderno</strong> e comece a registrar o seu trajeto.
+      </p>
+    </section>
+
+    <!-- Caderno -->
+    <section id="view-notebook" aria-labelledby="nb-title" hidden>
+      <button id="btn-back" class="btn btn-ghost" type="button">← Meus Cadernos</button>
+      <div class="nb-head">
+        <h2 id="nb-title"></h2>
+        <span id="nb-status" class="badge"></span>
+      </div>
+      <p id="nb-meta" class="muted"></p>
+
+      <div class="toolbar" role="group" aria-label="Ações do caderno">
+        <button id="btn-start" class="btn btn-primary" type="button">Iniciar Sessão</button>
+        <button id="btn-finish" class="btn btn-primary" type="button">Concluir Caderno</button>
+        <button id="btn-txt" class="btn" type="button">Exportar TXT</button>
+        <button id="btn-ai" class="btn" type="button">Copiar para IA</button>
+        <button id="btn-print" class="btn" type="button">Imprimir</button>
+        <button id="btn-delete" class="btn btn-danger" type="button">Excluir</button>
+      </div>
+
+      <form id="note-form" class="note-form" autocomplete="off">
+        <label for="note-input" class="label">Nova micro-nota</label>
+        <div class="note-row">
+          <input id="note-input" type="text" maxlength="50" placeholder="O que está acontecendo agora?" aria-describedby="note-counter note-hint" enterkeyhint="send">
+          <button id="btn-add" class="btn btn-primary" type="submit">Adicionar</button>
+        </div>
+        <div class="note-foot">
+          <span id="note-hint" class="muted"></span>
+          <span id="note-counter" class="counter" aria-live="polite">50 restantes</span>
+        </div>
+      </form>
+
+      <h3 class="notes-title">Micro-notas <span id="notes-count" class="muted"></span></h3>
+      <ol id="notes-list" class="notes"></ol>
+      <p id="notes-empty" class="empty" hidden>Nenhuma micro-nota registrada.</p>
+    </section>
+  </main>
+
+  <!-- Rodapé fixo -->
+  <footer class="app-footer">
+    <a class="foot-btn" href="https://magpe-stack.github.io/Taquigrafo/" target="_blank" rel="noopener noreferrer" aria-label="Abrir o aplicativo Taquígrafo" title="Taquígrafo">
+      <svg class="logo-sm" aria-hidden="true"><use href="#logo"/></svg>
+      <span>App</span>
+    </a>
+    <a class="foot-btn" href="https://github.com/magpe-stack/Taquigrafo" target="_blank" rel="noopener noreferrer" aria-label="Repositório do Taquígrafo no GitHub" title="GitHub">
+      <svg viewBox="0 0 24 24" class="ico" aria-hidden="true">
+        <path d="M4 4l4.5 3.5h7L20 4v9.5a8 8 0 0 1-16 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="9" cy="12.5" r="1.2" fill="currentColor"/><circle cx="15" cy="12.5" r="1.2" fill="currentColor"/>
+        <path d="M11 15.5h2M2.5 14l3.5.5M21.5 14l-3.5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <span>GitHub</span>
+    </a>
+    <a class="foot-btn" href="https://github.com/magpe-stack/Taquigrafo/blob/main/README.md" target="_blank" rel="noopener noreferrer" aria-label="Ajuda — README do Taquígrafo" title="Ajuda">
+      <svg viewBox="0 0 24 24" class="ico" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M9.2 9.3a2.9 2.9 0 1 1 4.3 2.5c-.9.5-1.5 1.1-1.5 2.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="12" cy="17.2" r="1.2" fill="currentColor"/>
+      </svg>
+      <span>Ajuda</span>
+    </a>
+  </footer>
+
+  <!-- Modal: Novo caderno -->
+  <dialog id="dlg-new" aria-labelledby="dlg-new-title">
+    <form method="dialog" id="form-new" class="dlg-body">
+      <h2 id="dlg-new-title">Novo Caderno</h2>
+      <label for="new-name" class="label">Nome da atividade</label>
+      <input id="new-name" type="text" maxlength="60" required placeholder="Ex.: Caminhada até o centro">
+      <div class="dlg-actions">
+        <button type="button" class="btn" data-close>Cancelar</button>
+        <button type="submit" class="btn btn-primary">Criar Caderno</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modal: Sobre -->
+  <dialog id="dlg-about" aria-labelledby="dlg-about-title">
+    <div class="dlg-body">
+      <h2 id="dlg-about-title">Sobre o Taquígrafo</h2>
+      <h3>A origem do nome</h3>
+      <p>“Taquigrafia” vem do grego <em>tachýs</em> (rápido) e <em>gráphein</em> (escrever): a escrita rápida. O <strong>taquígrafo</strong> é quem registra a fala na velocidade em que ela acontece, usando poucos traços para guardar muito sentido.</p>
+      <h3>A proposta</h3>
+      <p>O <strong>Taquígrafo</strong> aplica essa ideia ao tempo da cidade: uma <strong>taquigrafia temporal urbana</strong>. Enquanto você caminha, espera, se desloca ou observa, registra micro-notas de até 50 caracteres. Cada uma recebe automaticamente um carimbo de hora (HH:MM:SS), formando uma linha do tempo fiel do seu percurso.</p>
+      <p>Ao concluir o caderno, você tem um pacote de informações pronto para exportar em TXT, imprimir, copiar para uma IA analisar ou guardar em backup.</p>
+      <h3>Privacidade e uso offline</h3>
+      <p>Tudo é salvo no IndexedDB do seu próprio dispositivo. Não há servidor, conta nem rastreamento, e o app funciona sem internet depois do primeiro carregamento.</p>
+      <div class="dlg-actions"><button type="button" class="btn btn-primary" data-close>Fechar</button></div>
+    </div>
+  </dialog>
+
+  <!-- Modal: Confirmação -->
+  <dialog id="dlg-confirm" aria-labelledby="dlg-confirm-title">
+    <div class="dlg-body">
+      <h2 id="dlg-confirm-title">Confirmar</h2>
+      <p id="confirm-msg"></p>
+      <div class="dlg-actions">
+        <button type="button" class="btn" id="confirm-no">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirm-yes">Confirmar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- Relatório limpo para impressão -->
+  <div id="print-report" aria-hidden="true"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "Taquígrafo",
+  "short_name": "Taquígrafo",
+  "description": "Taquigrafia temporal urbana: micro-notas de até 50 caracteres com carimbo de hora, 100% offline.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "lang": "pt-BR",
+  "background_color": "#FFFFFF",
+  "theme_color": "#001F8F",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
