@@ -1,10 +1,12 @@
 # Manual do Taquígrafo
 
-Nov 10, 2026 · @Marinaldo
-
 ## 1. Apresentação
 
 O Taquígrafo é um aplicativo para registrar o que acontece ao seu redor em frases curtas, cada uma carimbada com a hora exata, funcionando inteiramente sem internet. Este manual explica, passo a passo, como instalar, usar e manter o aplicativo.
+
+<div align="center">
+  <img src="TaquigrafoCover.png" alt="Capa do Taquígrafo" width="100%" style="max-width: 900px; border-radius: 8px;">
+</div>
 
 ### A ideia: taquigrafia temporal urbana
 
